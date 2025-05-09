@@ -1,0 +1,21 @@
+name: test connection
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'Production' || github.ref == 'refs/heads/staging' && 'Staging' || github.ref == 'refs/heads/development' && 'Development' }}
+
+    steps:
+      - name: Deploy
+        run: |
+          ssh -i ${{ secrets.SSH_KEY }} mu@122.184.65.242 "echo 'SSH connection successful!'"
+
