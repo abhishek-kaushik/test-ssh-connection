@@ -1,4 +1,4 @@
-name: test connection
+name: Deploy to Kinsta
 
 on:
   push:
@@ -15,7 +15,23 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'Production' || github.ref == 'refs/heads/staging' && 'Staging' || github.ref == 'refs/heads/development' && 'Development' }}
 
     steps:
-      - name: Deploy
-        run: |
-          ssh -i ${{ secrets.SSH_KEY }} mu@122.184.65.242 "echo 'SSH connection successful!'"
+      # Checkout the latest code from the GitHub repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Add SSH Key to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        id: deploy_files
+        uses: Pendect/action-rsyncer@v2.0.0
+        env:
+          DEPLOY_KEY: ${{secrets.DEPLOY_KEY}}
+        with:
+          flags: '-acvzrW --human-readable'
+          src: './test'
+          dest: 'mu@122.184.65.242:/var/www/html/test-ssh'
